@@ -1,25 +1,36 @@
-import { useEffect, useState } from "react";
-import api from "./services/api";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
+import PublicRoute from "./components/routes/PublicRoute";
+import useAuth from "./hooks/useAuth";
+import useRoute from "./hooks/useRoute";
+import LoginPage from "./pages/LoginPage";
+import TicketDashboardPage from "./pages/TicketDashboardPage";
 
 function App() {
-  const [message, setMessage] = useState("");
+  const { isAuthenticated, login, logout } = useAuth();
+  const { navigate, path } = useRoute();
 
-  useEffect(() => {
-    api.get("/")
-      .then((response) => {
-        setMessage(response.data.message);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
+  const handleLogin = async (credentials) => {
+    await login(credentials);
+    navigate("/tickets", { replace: true });
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  if (path === "/login") {
+    return (
+      <PublicRoute isAuthenticated={isAuthenticated} navigate={navigate}>
+        <LoginPage onLogin={handleLogin} />
+      </PublicRoute>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-4xl font-bold text-blue-600">
-        {message}
-      </h1>
-    </div>
+    <ProtectedRoute isAuthenticated={isAuthenticated} navigate={navigate}>
+      <TicketDashboardPage onLogout={handleLogout} />
+    </ProtectedRoute>
   );
 }
 
